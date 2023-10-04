@@ -14,17 +14,20 @@ wdir=/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501
 cd ${wdir}
 
 masterlist_dir=/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-12/output
+#masterlist_dir=/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-07-24/filtered_masterlist
 
 ###Make Mean Signal  File
 if [ -f meanSignal.txt ]
 then
 	echo "File already created"
 else
+	#cut -f5,6 ${masterlist_dir}/masterlist_DHSs_dnase-07-24_all_chunkIDs.5.blacklistfiltered.bed | awk '{ result = $1 / $2; printf "%.4f\n", result }' -  > ${masterlist_dir}/meanSignal.txt
 	cut -f5,6 ${masterlist_dir}/masterlist.only_autosomes.filtered.bed | awk '{ result = $1 / $2; printf "%.4f\n", result }' -  > meanSignal.txt
 fi
 
 ###Run the subsampling R script
-Rscript /home/nasi4/proj/encode4-plus/encode4-superindex/saturation_curves/code_num_new_DHSs_meanSignal_topXPerc.R "k=${SLURM_ARRAY_TASK_ID}" 
+#Rscript ./code_num_new_DHSs_meanSignal_topXPerc.R "k=${SLURM_ARRAY_TASK_ID}" 
+Rscript /home/nasi4/proj/encode4-plus/encode4-superindex/saturation_curves/code_num_new_DHSs.R "k=${SLURM_ARRAY_TASK_ID}" 
 
 
 

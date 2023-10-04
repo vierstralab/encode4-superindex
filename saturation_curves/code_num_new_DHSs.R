@@ -7,21 +7,13 @@ if (length(args)==0) {
 } else {
   eval(parse(text=args[[1]])) # parse first argument: k
 }
-
-
 k <- as.integer(k)
 
 ## Load DHS presence/absence and continuous scored data
 load("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/data/dat_bin_4501.RData") # dat_bin
 print("loaded")
-DHS <- read.table("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/meanSignal.txt", header=FALSE, quote="")
-percentile <- 10
+dir.create("4501_res_files", showWarnings=FALSE, recursive=TRUE)
 
-threshold <- quantile(DHS[,1], probs=c(percentile/100))
-
-
-
-dir.create(sprintf("meanSignal_%s", percentile), showWarnings=FALSE, recursive=TRUE)
 ######################################################################################################
 ### New attempt at this - through sampling
 
@@ -65,29 +57,13 @@ get_perms <- function(lenx, k, num=50) {
 #res_num_new <- foreach (k=1:(ncol(dat_bin)-1)) %dopar% {
   print(k)
   subsets <- get_perms(ncol(dat_bin), k)
-#  res <- apply(subsets, 1, function(idx) {
-#    rs <- rowSums(dat_bin[,idx,drop=FALSE])
-#    colSums(dat_bin[rs==0,-idx,drop=FALSE])
-#  })
-  
-  dhs <- apply(subsets, 1, function(idx) {
-    rs <- rowSums(dat_bin[,idx,drop=FALSE]) 
-    #dat_bin_new <- dat_bin[rs==0, -idx, drop=FALSE]
-
-    values <- as.matrix(DHS[rs==0, , drop=FALSE])
-    topX <- as.matrix(values[values > threshold, ])
-
-    colSums(dat_bin[as.integer(rownames(topX)), -subsets[1,]])
-    #top <- values[values < threshold]
-    #length(top)
-    #mean(values[!is.na(values)])
-    #new_dhs <- masterlist[rs==0, ,drop=FALSE]
-    #command to see how many SNPs overlap these new DHSs
-    #or command to see the avg distance to TSS for new DHSs
-  })  
+  res <- apply(subsets, 1, function(idx) {
+    rs <- rowSums(dat_bin[,idx,drop=FALSE])
+    colSums(dat_bin[rs==0,-idx,drop=FALSE])
+  })
 #  res
 #}
 
-save(dhs, file=sprintf(paste("meanSignal_%s/k", k, ".RData", sep=""), percentile))
+save(res, file=paste("4501_res_files/res_k", k, ".RData", sep=""))
 
 
