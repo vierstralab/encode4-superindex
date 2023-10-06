@@ -1,5 +1,10 @@
+####Source and Subsampling by Wouter####
+########################################
+
+
 source("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/wouters_scripts/general.R")
 library(Matrix)
+library(reticulate)
 
 args=(commandArgs(TRUE))
 if (length(args)==0) {
@@ -9,18 +14,34 @@ if (length(args)==0) {
 }
 
 
+#Load in Paramaters
 k <- as.integer(k)
-percentile <- args[2]
+print(args[1])
 
-print(k)
+percentile <- as.integer(args[2])
+num_samples <- as.integer(args[3])
+bin_mtx_path <- args[4]
 print(percentile)
 
-quit(status=1, "Troubleshooting")
-
 ## Load DHS presence/absence and continuous scored data
-load("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/data/dat_bin_4501.RData") # dat_bin
-print("loaded")
-DHS <- read.table("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/meanSignal.txt", header=FALSE, quote="")
+if (file.exists(sprintf("data/dat_bin_%s.RData", num_samples))) {
+	load(sprintf("data/dat_bin_%s.RData", num_samples)) # loaded dat_bin object
+	print("loaded")
+} else {
+	print("Need to create binary RData File")
+	dir.create("data")
+	np <- import("numpy")
+	numpy_array <- np$load(bin_mtx_path)
+	integer_array <- as.integer(numpy_array)
+	rm(numpy_array)
+	dat_bin <- matrix(integer_array, ncol = num_samples)
+	save(dat_bin, file=sprintf("data/dat_bin_%s.RData", num_samples))
+	print("file saved")
+
+}
+
+
+DHS <- read.table("meanSignal.txt", header=FALSE, quote="")
 
 threshold <- quantile(DHS[,1], probs=c(percentile/100))
 
