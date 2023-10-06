@@ -10,12 +10,17 @@ if (length(args)==0) {
 
 
 k <- as.integer(k)
+percentile <- args[2]
+
+print(k)
+print(percentile)
+
+quit(status=1, "Troubleshooting")
 
 ## Load DHS presence/absence and continuous scored data
 load("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/data/dat_bin_4501.RData") # dat_bin
 print("loaded")
 DHS <- read.table("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/meanSignal.txt", header=FALSE, quote="")
-percentile <- 10
 
 threshold <- quantile(DHS[,1], probs=c(percentile/100))
 

@@ -1,2 +1,2 @@
-general=
-data=
+masterlist=/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-10-04/output/annotations/masterlist_DHSs_0802.filtered.annotated.bed
+general=/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/wouters_scripts.general.R
