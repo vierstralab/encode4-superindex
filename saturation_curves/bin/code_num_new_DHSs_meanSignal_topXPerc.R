@@ -5,6 +5,7 @@
 source("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/wouters_scripts/general.R")
 library(Matrix)
 library(reticulate)
+library(data.table)
 
 args=(commandArgs(TRUE))
 if (length(args)==0) {
@@ -34,7 +35,8 @@ if (file.exists(sprintf("data/dat_bin_%s.RData", num_samples))) {
 	numpy_array <- np$load(bin_mtx_path)
 	integer_array <- as.integer(numpy_array)
 	rm(numpy_array)
-	dat_bin <- matrix(integer_array, ncol = num_samples)
+	dat_bin_tmp <- matrix(integer_array, ncol = num_samples)
+	dat_bin <- Matrix(dat_bin_tmp, sparse = TRUE)
 	save(dat_bin, file=sprintf("data/dat_bin_%s.RData", num_samples))
 	print("file saved")
 
