@@ -39,7 +39,7 @@ echo "Number of DHSs in Masterlist: ${num_dhs}"
 binary_mtx_path=`awk -F'=' '{if($1 == "binary_mtx") print $2}' ${SCRIPT_DIR}/file_paths.txt`
 
 #Check if binary mtx file exists to set memory
-if [ -f "data/data_bin_${num_samples}.RData" ] 
+if [ -f "data/dat_bin_${num_samples}.RData" ] 
 then
 	echo "Binary RData file exists"
 	memory=30gb
@@ -63,7 +63,7 @@ else
 
 	if [ -f meanSignal.txt ] && [ -s meanSignal.txt ]
 	then
-		sbatch --array=1-3%3 --mem=${memory}--output=outdir/slurm.%N.%j.%a.out --error=errdir/slurm.%N.%j.%a.err ${SCRIPT_DIR}/bin/slurm_meanSignal_topX_allDHSs.sh ${SCRIPT_DIR} ${percentile} ${num_samples} ${binary_mtx_path}
+		sbatch --array=1-${num_samples}%800 --mem=${memory} --output=outdir/slurm.%N.%j.%a.out --error=errdir/slurm.%N.%j.%a.err ${SCRIPT_DIR}/bin/slurm_meanSignal_topX_allDHSs.sh ${SCRIPT_DIR} ${percentile} ${num_samples} ${binary_mtx_path}
 	else
 		echo "Need meanSignal.txt file"
 	fi
