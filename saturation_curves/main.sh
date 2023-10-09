@@ -52,6 +52,7 @@ fi
 if [ ${script_option} == "allDHSs" ]
 then
 	echo "allDHSs"
+	sbatch --array=2-${num_samples}%800 --mem=${memory} --output=outdir/allDHSs.slurm.%N.%j.%a.out --error=errdir/allDHSs.slurm.%N.%j.%a.err ${SCRIPT_DIR}/bin/slurm_num_new_DHSs_all.sh ${SCRIPT_DIR} ${num_samples} ${binary_mtx_path}
 else
 	echo "meanSignal"
 	
@@ -63,7 +64,7 @@ else
 
 	if [ -f meanSignal.txt ] && [ -s meanSignal.txt ]
 	then
-		sbatch --array=1 --mem=${memory} --output=outdir/slurm.%N.%j.%a.out --error=errdir/slurm.%N.%j.%a.err ${SCRIPT_DIR}/bin/slurm_meanSignal_topX_allDHSs.sh ${SCRIPT_DIR} ${percentile} ${num_samples} ${binary_mtx_path}
+		sbatch --array=2-${num_samples}%800 --mem=${memory} --output=outdir/slurm.%N.%j.%a.out --error=errdir/slurm.%N.%j.%a.err ${SCRIPT_DIR}/bin/slurm_meanSignal_topX_allDHSs.sh ${SCRIPT_DIR} ${percentile} ${num_samples} ${binary_mtx_path}
 	else
 		echo "Need meanSignal.txt file"
 	fi

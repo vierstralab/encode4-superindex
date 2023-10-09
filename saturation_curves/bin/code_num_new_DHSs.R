@@ -1,5 +1,8 @@
 source("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/wouters_scripts/general.R")
 library(Matrix)
+library(reticulate)
+library(data.table)
+
 
 args=(commandArgs(TRUE))
 if (length(args)==0) {
@@ -7,12 +10,38 @@ if (length(args)==0) {
 } else {
   eval(parse(text=args[[1]])) # parse first argument: k
 }
+
+
+#Load in Parameters
 k <- as.integer(k)
+print(args[1])
+
+num_samples <- as.integer(args[2])
+bin_mtx_path <- args[3]
+
+
+
 
 ## Load DHS presence/absence and continuous scored data
-load("/net/seq/data2/projects/ENCODE4Plus/figures/adding_additional_datasets/4501_Index/data/dat_bin_4501.RData") # dat_bin
-print("loaded")
-dir.create("4501_res_files", showWarnings=FALSE, recursive=TRUE)
+if (file.exists(sprintf("data/dat_bin_%s.RData", num_samples))) {
+        load(sprintf("data/dat_bin_%s.RData", num_samples)) # loaded dat_bin object
+        print("loaded")
+} else {
+        print("Need to create binary RData File")
+        dir.create("data")
+        np <- import("numpy")
+        numpy_array <- np$load(bin_mtx_path)
+        integer_array <- as.integer(numpy_array)
+        rm(numpy_array)
+        dat_bin_tmp <- matrix(integer_array, ncol = num_samples)
+        dat_bin <- Matrix(dat_bin_tmp, sparse = TRUE)
+        save(dat_bin, file=sprintf("data/dat_bin_%s.RData", num_samples))
+        print("file saved")
+
+}
+
+
+dir.create(sprintf("res_files_%s", num_samples), showWarnings=FALSE, recursive=TRUE)
 
 ######################################################################################################
 ### New attempt at this - through sampling
@@ -64,6 +93,6 @@ get_perms <- function(lenx, k, num=50) {
 #  res
 #}
 
-save(res, file=paste("4501_res_files/res_k", k, ".RData", sep=""))
+save(res, file=sprintf(paste("res_files_%s/res_k", k, ".RData", sep=""), num_samples))
 
 
