@@ -105,7 +105,7 @@ get_perms <- function(lenx, k, num=50) {
     values <- as.matrix(DHS[rs==0, , drop=FALSE])
     topX <- as.matrix(values[values > threshold, ])
 
-    colSums(dat_bin[as.integer(rownames(topX)), -subsets[1,]])
+    colSums(dat_bin[as.integer(rownames(topX)), -idx])
     #top <- values[values < threshold]
     #length(top)
     #mean(values[!is.na(values)])

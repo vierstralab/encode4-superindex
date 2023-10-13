@@ -12,7 +12,7 @@ then
 else
 	echo "Parameter1: Number of Samples in Index"
 	echo "Parameter2: Either meanSignal or allDHSs"
-	echo "Parameter3: Quantile Percentage"
+	echo "Parameter3: Quantile Percentage (0 if allDHSs)"
 	echo "Make sure to run this script in desired folder"
 	exit 1
 
