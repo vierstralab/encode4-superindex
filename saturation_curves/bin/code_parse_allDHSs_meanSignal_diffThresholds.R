@@ -10,7 +10,7 @@ library(boot)
 
 
 ## Load DHS presence/absence and continuous scored data
-load("data/dat_bin_4501.RData")
+load("data/dat_bin_4025.RData")
 
 ################################################################################################################
 
@@ -21,19 +21,19 @@ load("data/dat_bin_4501.RData")
 #  as.Date(as.integer(metadata$sample_creation_date[is.na(sample_dates)]), origin = as.Date("1900-01-01"))
 
 ### Load in sampling results
-res_90 <- sapply(2:(4501-2), function(k) {
+res_90 <- sapply(2:(4025-2), function(k) {
   load(paste("meanSignal_90/k", k, ".RData", sep="")) # res
   if(class(dhs) != "matrix") dhs <- t(as.matrix(dhs))
   dhs
 });
 
-res_70 <- sapply(2:(4501-2), function(k) {
+res_70 <- sapply(2:(4025-2), function(k) {
   load(paste("meanSignal_70/k", k, ".RData", sep="")) # res
   if(class(dhs) != "matrix") dhs <- t(as.matrix(dhs))
   dhs
 });
 
-res_50 <- sapply(2:(4501-2), function(k) {
+res_50 <- sapply(2:(4025-2), function(k) {
   load(paste("meanSignal_50/k", k, ".RData", sep="")) # res
   if(class(dhs) != "matrix") dhs <- t(as.matrix(dhs))
   dhs
@@ -54,26 +54,41 @@ res_10 <- sapply(2:2000, function(k) {
 
 
 # Add first dataset, this isnt the proper way but a sanity check
-res_90 <- c(list(t(as.matrix(colSums(dat_bin)*.10))), res_90)
-res_70 <- c(list(t(as.matrix(colSums(dat_bin)*.30))), res_70)
-res_50 <- c(list(t(as.matrix(colSums(dat_bin)*.50))), res_50)
+DHS <- read.table("meanSignal.txt", header=FALSE, quote="")
 
 
-
-#res_all <- c(list(t(as.matrix(colSums(dat_bin)))), res_all)
-#res_all_733 <- c(list(t(as.matrix(colSums(dat)))), res_all_733)
-n <- length(res_90) # should be identical to ncol(dat_bin)
-#n_733 <- length(res_all_733)
 
 
 
 # Alternative ways of approximating this
-res_90_mean <- sapply(res_90, mean)
-res_70_mean <- sapply(res_70, mean)
-res_50_mean <- sapply(res_50 ,mean)
+res_90_tmp <- sapply(res_90, mean)
+res_70_tmp <- sapply(res_70, mean)
+res_50_tmp <- sapply(res_50 ,mean)
 res_30_mean <- sapply(res_30, mean)
 res_10_mean <- sapply(res_10, mean)
 
+#90
+threshold <- quantile(DHS[,1], probs=c(90/100))
+topX <- subset(DHS, DHS[,1] > threshold)
+dataset_1 <- colSums(dat_bin[as.integer(rownames(topX)), ])
+dataset1_mean <- mean(dataset_1)
+res_90_mean <- c(dataset1_mean, as.vector(res_90_tmp))
+
+
+#70
+threshold <- quantile(DHS[,1], probs=c(70/100))
+topX <- subset(DHS, DHS[,1] > threshold)
+dataset_1 <- colSums(dat_bin[as.integer(rownames(topX)), ])
+dataset1_mean <- mean(dataset_1)
+res_70_mean <- c(dataset1_mean, as.vector(res_70_tmp))
+
+
+#50
+threshold <- quantile(DHS[,1], probs=c(50/100))
+topX <- subset(DHS, DHS[,1] > threshold)
+dataset_1 <- colSums(dat_bin[as.integer(rownames(topX)), ])
+dataset1_mean <- mean(dataset_1)
+res_50_mean <- c(dataset1_mean, as.vector(res_70_tmp))
 
 #res_all_mean <- sapply(res_all, median)
 
@@ -97,15 +112,16 @@ res_10_mean <- sapply(res_10, mean)
 #lines(1:n, res_all_quants["50%",], lwd=2, col="black")
 #dev.off()
 
+n <- length(res_90_mean)
 
 ### Curve fitting
 dat_new_90 <- data.frame(x=1:n, y=res_90_mean)
 dat_new_70 <- data.frame(x=1:n, y=res_70_mean)
-dat_new_50 <- data.frame(x=1:n, y=res_50_mean)
+dat_new_50 <- data.frame(xa=1:n, y=res_50_mean)
 dat_new_30 <- data.frame(x=1:n, y=res_30_mean)
 dat_new_10 <- data.frame(x=1:n, y=res_10_mean)
 #dat_733 <- data.frame(x=1:n_733, y=res_all_733_mean)
-total <- nrow(dat_bin)
+total <- nrow(dat_bin)/100
 
 
 data_90 <- (cumsum(dat_new_90[,2]))
@@ -115,15 +131,15 @@ data_30 <- (cumsum(dat_new_30[,2]))
 data_10 <- (cumsum(dat_new_10[,2]))
 
 #print(dat_new)
-plotfile("/home/nasi4/public_html/encode4plus_figures/additional_DHS/4501_Index/meanSignal_topX_Mean_allDHSs_diffThresholds", type="pdf")
+plotfile("/home/nasi4/public_html/encode4plus_figures/additional_DHS/4025_Index/meanSignal_topX_Mean_allDHSs_diffThresholds", type="pdf")
 par(cex=2,oma=c(0,3,0,0))
-plot(x=1:n, y=data_90/(.1*total), type="l", lwd=2, xlim=c(0,5000), ylim=c(0, 1), col="black",
+plot(x=1:n, y=data_90/(.1*total), type="l", lwd=2, xlim=c(0,4500), ylim=c(0, 100), col="black",
      xlab="Number of DNase-seq datasets", 
      ylab="Cumulative Sum of DHSs in topX% (%)")
-title("Added DHSs for 4501 Index", cex.main=.75)
+title("Added DHSs for 4025 Index", cex.main=.75)
 par(cex.lab = .5)
 lines(1:n,  data_70/(.3*total), lwd=2, col="purple")
-lines(1:n,  data_50/(.5*total), lwd=2, col="red")
+#lines(1:n,  data_50/(.5*total), lwd=2, col="red")
 #lines(1:n, dat_new_30$y, lwd=2, col="purple")
 #lines(1:n, dat_new_10$y, lwd=2, col="blue")
 legend('bottomright', legend = c('Top 10%', 'Top 30%', 'Top 50%'), col = c('black', 'purple', 'red'), lty = 1, cex=.5, lwd=2)
