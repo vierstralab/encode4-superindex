@@ -21,6 +21,12 @@ load("data/dat_bin_4025.RData")
 #  as.Date(as.integer(metadata$sample_creation_date[is.na(sample_dates)]), origin = as.Date("1900-01-01"))
 
 ### Load in sampling results
+res_0 <- sapply(2:(4025-2), function(k) {
+  load(paste("meanSignal_0/k", k, ".RData", sep="")) # res
+  if(class(dhs) != "matrix") dhs <- t(as.matrix(dhs))
+  dhs
+});
+
 res_90 <- sapply(2:(4025-2), function(k) {
   load(paste("meanSignal_90/k", k, ".RData", sep="")) # res
   if(class(dhs) != "matrix") dhs <- t(as.matrix(dhs))
@@ -57,15 +63,14 @@ res_10 <- sapply(2:2000, function(k) {
 DHS <- read.table("meanSignal.txt", header=FALSE, quote="")
 
 
-
-
-
 # Alternative ways of approximating this
 res_90_tmp <- sapply(res_90, mean)
 res_70_tmp <- sapply(res_70, mean)
 res_50_tmp <- sapply(res_50 ,mean)
-res_30_mean <- sapply(res_30, mean)
-res_10_mean <- sapply(res_10, mean)
+#res_30_mean <- sapply(res_30, mean)
+#res_10_mean <- sapply(res_10, mean)
+res_0_tmp <- sapply(res_0, mean)
+
 
 #90
 threshold <- quantile(DHS[,1], probs=c(90/100))
@@ -88,7 +93,16 @@ threshold <- quantile(DHS[,1], probs=c(50/100))
 topX <- subset(DHS, DHS[,1] > threshold)
 dataset_1 <- colSums(dat_bin[as.integer(rownames(topX)), ])
 dataset1_mean <- mean(dataset_1)
-res_50_mean <- c(dataset1_mean, as.vector(res_70_tmp))
+res_50_mean <- c(dataset1_mean, as.vector(res_50_tmp))
+
+
+#0
+threshold <- quantile(DHS[,1], probs=c(100/100))
+topX <- subset(DHS, DHS[,1] > threshold)
+dataset_1 <- colSums(dat_bin[as.integer(rownames(topX)), ])
+dataset1_mean <- mean(dataset_1)
+res_0_mean <- c(dataset1_mean, as.vector(res_0_tmp))
+
 
 #res_all_mean <- sapply(res_all, median)
 
@@ -118,31 +132,41 @@ n <- length(res_90_mean)
 dat_new_90 <- data.frame(x=1:n, y=res_90_mean)
 dat_new_70 <- data.frame(x=1:n, y=res_70_mean)
 dat_new_50 <- data.frame(xa=1:n, y=res_50_mean)
-dat_new_30 <- data.frame(x=1:n, y=res_30_mean)
-dat_new_10 <- data.frame(x=1:n, y=res_10_mean)
+#dat_new_30 <- data.frame(x=1:n, y=res_30_mean)
+#dat_new_10 <- data.frame(x=1:n, y=res_10_mean)
+dat_new_0 <- data.frame(x=1:n, y=res_0_mean)
 #dat_733 <- data.frame(x=1:n_733, y=res_all_733_mean)
-total <- nrow(dat_bin)/100
+#total <- nrow(dat_bin)/100
 
 
 data_90 <- (cumsum(dat_new_90[,2]))
 data_70 <- (cumsum(dat_new_70[,2]))
 data_50 <- (cumsum(dat_new_50[,2]))
-data_30 <- (cumsum(dat_new_30[,2]))
-data_10 <- (cumsum(dat_new_10[,2]))
+#data_30 <- (cumsum(dat_new_30[,2]))
+#data_10 <- (cumsum(dat_new_10[,2]))
+data_0 <- (cumsum(dat_new_0[,2]))
+
+
+total_90 <- data_90[length(data_90)]
+total_70 <- data_70[length(data_70)]
+total_50 <- data_50[length(data_50)]
+total_0 <- data_0[length(data_0)]
+
+
 
 #print(dat_new)
 plotfile("/home/nasi4/public_html/encode4plus_figures/additional_DHS/4025_Index/meanSignal_topX_Mean_allDHSs_diffThresholds", type="pdf")
 par(cex=2,oma=c(0,3,0,0))
-plot(x=1:n, y=data_90/(.1*total), type="l", lwd=2, xlim=c(0,4500), ylim=c(0, 100), col="black",
+plot(x=1:n, y=data_90/total_90*100, type="l", lwd=2, xlim=c(0,4500), ylim=c(0, 100), col="black",
      xlab="Number of DNase-seq datasets", 
      ylab="Cumulative Sum of DHSs in topX% (%)")
 title("Added DHSs for 4025 Index", cex.main=.75)
 par(cex.lab = .5)
-lines(1:n,  data_70/(.3*total), lwd=2, col="purple")
-#lines(1:n,  data_50/(.5*total), lwd=2, col="red")
-#lines(1:n, dat_new_30$y, lwd=2, col="purple")
+lines(1:n,  data_70/total_70*100, lwd=2, col="purple")
+lines(1:n,  data_50/total_50*100, lwd=2, col="red")
+lines(1:n, data_0/total_0*100, lwd=2, col="gray")
 #lines(1:n, dat_new_10$y, lwd=2, col="blue")
-legend('bottomright', legend = c('Top 10%', 'Top 30%', 'Top 50%'), col = c('black', 'purple', 'red'), lty = 1, cex=.5, lwd=2)
+legend('bottomright', legend = c('Top 10%', 'Top 30%', 'Top 50%', 'Top 100%'), col = c('black', 'purple', 'red', 'gray'), lty = 1, cex=.5, lwd=2)
 dev.off()
 
 
