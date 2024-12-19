@@ -8,40 +8,44 @@ args=(commandArgs(TRUE))
 if (length(args)==0) {
   stop("No arguments supplied.")
 } else {
-  eval(parse(text=args[[1]])) # parse first argument: k
+  print("arguments exist")
 }
 
+print(args)
 
-#Load in Parameters
-k <- as.integer(k)
-print(args[1])
-
-num_samples <- as.integer(args[2])
-bin_mtx_path <- args[3]
-
-
-
-
-## Load DHS presence/absence and continuous scored data
-if (file.exists(sprintf("data/dat_bin_%s.RData", num_samples))) {
-        load(sprintf("data/dat_bin_%s.RData", num_samples)) # loaded dat_bin object
-        print("loaded")
-} else {
-        print("Need to create binary RData File")
-        dir.create("data")
-        np <- import("numpy")
-        numpy_array <- np$load(bin_mtx_path)
-        integer_array <- as.integer(numpy_array)
-        rm(numpy_array)
-        dat_bin_tmp <- matrix(integer_array, ncol = num_samples)
-        dat_bin <- Matrix(dat_bin_tmp, sparse = TRUE)
-        save(dat_bin, file=sprintf("data/dat_bin_%s.RData", num_samples))
-        print("file saved")
-
-}
+#Read in Parameters
+bin_mtx_path <- args[1]
+dhs_path <- args[2]
+k <- as.integer(args[3])
+percentile <- as.integer(args[4])
+print(percentile)
 
 
-dir.create(sprintf("res_files_%s", num_samples), showWarnings=FALSE, recursive=TRUE)
+#Load Parameters
+np <- import("numpy")
+numpy_array <- np$load(bin_mtx_path)
+dat_bin <- Matrix(numpy_array, sparse = TRUE)
+dim(dat_bin)
+print(dhs_path)
+
+dhs_masterlist = read.table(dhs_path, sep="\t")
+head(dhs_masterlist)
+#save(dat_bin, file=sprintf("dat_bin_%s.RData", num_samples))
+#print("file saved")
+
+
+
+#Load mean signal
+#DHS <- read.table("meanSignal.txt", header=FALSE, quote="")
+#DHS_subset <- DHS[rowSums(selected_data) != 0, ]
+#DHS <- as.data.frame(DHS_subset)
+DHS <- as.matrix(dhs_masterlist[,5]/dhs_masterlist[,6])
+rownames(DHS) <- c(1:nrow(DHS))
+
+threshold <- quantile(DHS, probs=c(percentile/100, (percentile+10)/100))
+
+#dir.create(sprintf("meanSignal_T47D_%s_decile", percentile), showWarnings=FALSE, recursive=TRUE)
+#dir.create("NK", showWarnings=FALSE, recursive=TRUE)
 
 ######################################################################################################
 ### New attempt at this - through sampling
@@ -88,11 +92,21 @@ get_perms <- function(lenx, k, num=50) {
   subsets <- get_perms(ncol(dat_bin), k)
   res <- apply(subsets, 1, function(idx) {
     rs <- rowSums(dat_bin[,idx,drop=FALSE])
-    colSums(dat_bin[rs==0,-idx,drop=FALSE])
+    
+    values <- as.matrix(DHS[rs == 0, , drop=FALSE])
+    
+
+    topX <- as.matrix(values[values > threshold[1] & values < threshold[2], ])
+    
+    colSums(dat_bin[as.integer(rownames(topX)), -idx])
+    #colSums(dat_bin[rs==0,-idx,drop=FALSE])
+    
+    #colSums(dat_bin[rs>0,-idx,drop=FALSE])/colSums(dat_bin[, -idx, drop=FALSE])
+
   })
 #  res
 #}
 
-save(res, file=sprintf(paste("res_files_%s/res_k", k, ".RData", sep=""), num_samples))
-
+save(res, file=sprintf("%s", args[5]))
+#save(res, file=paste(sprintf("cell_type/%s/res_k", cell_type) ,k, ".RData", sep=""))
 
