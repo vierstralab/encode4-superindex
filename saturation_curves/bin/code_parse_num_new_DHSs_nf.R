@@ -6,60 +6,49 @@ library(Matrix)
 library(boot)
 library(stringr)
 library(reticulate)
+np <- import("numpy")
 
 ################################################################################################################
 args=(commandArgs(TRUE))
 
 
-## Load DHS presence/absence and continuous scored data
-#num_samples <- args[2]
-#num_samples <- 4078
-#load(sprintf("../../data/dat_bin_%s.RData", num_samples))
-
 #Load in Parameters
+sample_counts <- args[1]
+percentile <- args[2]
+saturation_curve_name <- args[3]
+metrics_file <- args[4]
 bin_mtx_path <- args[5]
 prefix <- args[6]
-np <- import("numpy")
+
+
+
+
+#Load in Binary Matrix
 numpy_array <- np$load(bin_mtx_path)
 dat_bin <- Matrix(numpy_array, sparse = TRUE)
 dim(dat_bin)
 
 ################################################################################################################
 
-
-cleaned_samples_string <- str_remove_all(args[1], "\\[|\\]")
+#Find the number of samples 
+cleaned_samples_string <- str_remove_all(sample_counts, "\\[|\\]")
 num_samples <- as.numeric(trimws(strsplit(cleaned_samples_string, ",")[[1]]))
 samples_v <- sort(num_samples)
 print(min(samples_v))
 print(max(samples_v))
 
+#Read in all permuted data
 res_all <- sapply(min(samples_v):max(samples_v), function(k) {
-load(sprintf("%s.%s.%s.Rdata", prefix, k, args[2]))
+load(sprintf("%s.%s.%s.Rdata", prefix, k, percentile))
     if(!inherits(res, "matrix")) res <- t(as.matrix(res))
     res
 })
 
+#Calculate the number of new DHSs in the first dataset by colSums of each dataset
+#Will get a vector of the number of samples
 res_all <- c(list(t(as.matrix(colSums(dat_bin[,1:ncol(dat_bin)])*.1))), res_all)
 
-# Add first dataset, too
-#res_all <- c(list(t(as.matrix(colSums(dat_bin[,1:num_samples-1])))), res_all)
-#n <- length(res_all) # should be identical to ncol(dat_bin)
-
-#res_all_altius <- sapply(2:4076, function(k) {
-#  load(sprintf(paste("res_files_%s/res_k", k, ".RData", sep=""), "altius")) # res
-#  if(class(res) != "matrix") res <- t(as.matrix(res))
-#  res
-#});
-#
-#res_all_altius <- c(list(t(as.matrix(colSums(dat_bin[,1:4078])))), res_all_altius)
-
-#res_all <- sapply(2:76, function(k) {
-#  load(sprintf(paste("res_files_T47D/res_k", k, ".RData", sep=""), 52)) # res
-#  if(class(res) != "matrix") res <- t(as.matrix(res))
-#  res
-#});
-
-# Compute metrics using sapply
+# Compute permutation metrics using sapply
 res_all_summary <- sapply(res_all, function(x) {
   n <- length(x)
   # Quantile-based metrics
@@ -81,9 +70,9 @@ res_all_summary <- sapply(res_all, function(x) {
 # Transpose the result to make rows correspond to each element in res_all
 res_all_summary <- t(res_all_summary)
 
-# Create data_new with all metrics
-data_new <- data.frame(
-  x = 1:length(res_all_mean),          # Index
+# Create data_summary with all metrics
+data_summary <- data.frame(
+  x = 1:length(res_all_summary),          # Index
   mean = res_all_summary[, "mean"],   # Mean
   median = res_all_summary[, "50%"],     # Median (50th percentile)
   binom_025 = res_all_summary[, "binom_025"], # Binomial 2.5%
@@ -94,45 +83,19 @@ data_new <- data.frame(
 
 #Confidence Interval Options
 #BootStrap (code in previous script)
-#res_all_range <- sapply(res_all, range)
 #res_all_CI_mean <- qnorm(0.975) * sapply(res_all, sd) / sqrt(sapply(res_all, length))
 
-save(data_new, file=sprintf("%s", args[4]))
-
-#tmp <- data_all + .8552
-#all <- c(data_all_altius, tmp)
+save(data_summary, file=sprintf("%s", metrics_file))
 
 
-#data_new_altius <- data.frame(x=1:length(res_all_altius_mean), y=res_all_altius_mean)
-#data_all_altius <- (cumsum(data_new_altius[,2])/nrow(dat_bin))
 
-#Change the directory when finished. Just easier for investigative purposes
-#dir.create(sprintf("/home/nasi4/public_html/encode4plus_figures/additional_DHS/%s_Index", num_samples))
-#plotfile(sprintf("/home/nasi4/public_html/encode4plus_figures/additional_DHS/%s_Index/num_new_DHSs_allDHSs_nonlog_noperc", num_samples), width=20,type="pdf")
-#par(cex=2,oma=c(0,3,0,0))
-#plot(data_new, type="l", lwd=2, xlim=c(0,ncol(dat_bin)), ylim=c(0, 50000),
-#     xlab="Number of DNase-seq datasets",
-#     ylab="Mean number of newly added DHS (%)")
-#title(sprintf("%s Index", num_samples))
-#dev.off()
-
-
-saturation_curve <- args[3]
-plotfile(sprintf("%s", saturation_curve), width=10, type="pdf")
+plotfile(sprintf("%s", saturation_curve_name), width=10, type="pdf")
 par(cex=1,oma=c(0,3,0,0))
-plot(data_new, type="l", lwd=2, ylim=c(0,4000),xlim=c(0, length(res_all_mean)),
+plot(data_summary, type="l", lwd=2, ylim=c(0,2000), xlim=c(0, length(res_all_summary)),
      xlab="Number of DNase-seq datasets",
-     ylab="Mean number of Additional  DHSs")
+     ylab="Number of Additional  DHSs")
 title("Saturation Curve for Additional DHSs in Natural Killer samples", cex=.2)
-#abline(v = 4078, col = "red", lwd = 2)
 dev.off()
 
 
-
-##Plot expected curve fit
-#dat <- data.frame(x=1:length(all), y=all)
-#x_train <- dat[1:4078,]
-#model <- lm(log(y) ~ log(x), data=x_train)
-#test_data <- dat[4079:length(all), ]
-#predictions <- predict(model, newdata = test_data)
 
