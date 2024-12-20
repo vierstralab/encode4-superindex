@@ -15,8 +15,8 @@ args=(commandArgs(TRUE))
 #Load in Parameters
 sample_counts <- args[1]
 percentile <- args[2]
-saturation_curve_name <- args[3]
-metrics_file <- args[4]
+saturation_curve_name <- as.character(args[3])
+metrics_file <- as.character(args[4])
 bin_mtx_path <- args[5]
 prefix <- args[6]
 
@@ -72,7 +72,7 @@ res_all_summary <- t(res_all_summary)
 
 # Create data_summary with all metrics
 data_summary <- data.frame(
-  x = 1:length(res_all_summary),          # Index
+  x = 1:nrow(res_all_summary),          # Index
   mean = res_all_summary[, "mean"],   # Mean
   median = res_all_summary[, "50%"],     # Median (50th percentile)
   binom_025 = res_all_summary[, "binom_025"], # Binomial 2.5%
@@ -81,9 +81,12 @@ data_summary <- data.frame(
 )
 
 
-#Confidence Interval Options
 #BootStrap (code in previous script)
+#res_all_quants <- sapply(res_all, quantile, probs=c(0.05,0.5,0.95), na.rm=T)
+#res_all_CI <- sapply(res_all, function(x) sort(x)[qbinom(c(.025,.975), length(x), 0.5)]);
+#res_all_range <- sapply(res_all, range)
 #res_all_CI_mean <- qnorm(0.975) * sapply(res_all, sd) / sqrt(sapply(res_all, length))
+
 
 save(data_summary, file=sprintf("%s", metrics_file))
 
@@ -91,10 +94,10 @@ save(data_summary, file=sprintf("%s", metrics_file))
 
 plotfile(sprintf("%s", saturation_curve_name), width=10, type="pdf")
 par(cex=1,oma=c(0,3,0,0))
-plot(data_summary, type="l", lwd=2, ylim=c(0,2000), xlim=c(0, length(res_all_summary)),
+plot(data_summary$x, data_summary$mean, type="l", lwd=2, ylim=c(0,2000), xlim=c(0, nrow(res_all_summary)),
      xlab="Number of DNase-seq datasets",
      ylab="Number of Additional  DHSs")
-title("Saturation Curve for Additional DHSs in Natural Killer samples", cex=.2)
+title(sprintf("Saturation Curve for Additional DHSs in %s samples", prefix), cex=.2)
 dev.off()
 
 
