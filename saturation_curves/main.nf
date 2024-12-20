@@ -68,22 +68,23 @@ process transform_to_saturation_curve {
 process quantile_curve {
 
 
-    publishDir "${params.outdir}/${prefix}/pdfs", pattern: "*quantile_curves.pdf"
+    publishDir "${params.outdir}/${prefix}/pdfs", pattern: "*quantile_curve.pdf"
 
 
     input:
    	tuple val(prefix), path(percent_data), path(binary_matrix_subset)
 
     output:
-	tuple val(prefix), path(quantile_curves)
+	tuple val(prefix), path(mean_quantile_curve), path(median_quantile_curve), path(mean_fraction_quantile_curve)
 
     script:
 
-    quantile_curves = "${prefix}.quantile_curves.pdf"
-
+    mean_quantile_curve = "${prefix}_mean_quantile_curve.pdf"
+    median_quantile_curve = "${prefix}_median_quantile_curve.pdf"
+    mean_fraction_quantile_curve = "${prefix}_mean_fraction_quantile_curve.pdf"
     """
 	
-    	Rscript ${moduleDir}/bin/code_parse_quantiles_nf.R  > ${quantile_curves}
+    	Rscript ${moduleDir}/bin/code_parse_quantiles_nf.R ${prefix} ${binary_matrix_subset}
 
     """
 	
